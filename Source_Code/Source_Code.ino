@@ -16,12 +16,29 @@ int maximumRange = 200; //kebutuhan akan maksimal range
 int minimumRange = 00; //kebutuhan akan minimal range
 long duration, distance; //waktu untuk kalkulasi jarak
 
+//Ultrasonik_Removal
+#define echoPin_1 #inputPIN //Echo Pin
+#define trigPin_1 #inputPIN //Trigger Pin
+#define Buzzer_1 #inputPIN //Led default dari Arduino uno
+ 
+int maximumRange_1 = 200; //kebutuhan akan maksimal range
+int minimumRange_1 = 00; //kebutuhan akan minimal range
+long duration_1, distance_1; //waktu untuk kalkulasi jarak
+
 //RTC
 bool on=LOW;
 bool off=HIGH;
 String hari;
 String waktu;
 String tanggal;
+
+//Turbidity
+static float kekeruhan;
+static float tegangan;
+
+//Solenoid Valve
+byte solRemoval #input pin;
+bye solFilling #input pin;
 
 void setup() {
   //Setup RTC
@@ -38,6 +55,10 @@ myservo.attach(9); //deklarasi servo pada pin 9
 pinMode(trigPin, OUTPUT);
 pinMode(echoPin, INPUT);
 pinMode(Buzzer, OUTPUT);
+
+//Setup Solenoid Valve
+pinMode(solRemoval, OUTPUT);
+pinMode(solFilling, OUTPUT);
 }
 
 void ultrasonicON(){
@@ -63,6 +84,49 @@ delay(50);
 }
 }
 
+void ultrasonicRemoval_ON(){
+  float turbidityBawah;
+  
+//digitalWrite(trigPin_1, LOW);delayMicroseconds(2);
+//digitalWrite(trigPin_1, HIGH);delayMicroseconds(10);
+//digitalWrite(trigPin_1, LOW);
+//duration_1 = pulseIn(echoPin_1, HIGH);
+ 
+long readUltrasonicRemoval(){
+  digitalWrite(trigPin_1, LOW);delayMicroseconds(2);
+digitalWrite(trigPin_1, HIGH);delayMicroseconds(10);
+digitalWrite(trigPin_1, LOW);
+duration_1 = pulseIn(echoPin_1, HIGH);
+//perhitungan untuk dijadikan jarak
+distance_1 = duration_1/58.2;
+return distance_1;
+}
+
+distance_1 = readUltrasonicRemoval();
+
+//perhitungan untuk dijadikan jarak
+//distance_1 = duration_1/58.2;
+
+bool flag = true; 
+
+while(flag == true){
+  digitalWrite(solFilling, HIGH);
+  if (distance_1 >= maximumRange_1){
+
+turbidityBawah = turbiditySensor();
+
+if (turbidityBawah =< 50){
+  digitalWrite(solRemoval, LOW);
+  if (distance_1 <= minimumRange_1){
+    digitalWrite(solFilling, LOW);
+    flag = False;
+};
+};
+};
+};
+
+};
+
 void servoON(){
 Delay (2000);
 for(pos=0; pos<41 ; pos+=1){
@@ -84,8 +148,28 @@ void readRTC() {
   }
 }
 
+float turbiditySensor(){
+  int val = analogRead(#input pin);
+  tegangan = val * (5.00/1024);
+  kekeruhan = 100.00 - (tegangan/4.6) * 100.00;
+  return kekeruhan;
+}
+
+void turbidityControl(){
+  float nilaiKekeruhan;
+nilaiKekeruhan = turbiditySensor();
+
+if (nilaiKekeruhan => 50){
+  digital.write(solRemoval, HIGH);
+  ultrasonicRemoval_ON();
+} else {
+  digital.write(solRemoval, LOW);
+}
+}
+
 void loop() {
   readRTC();
   ultrasonicON();
+  turbidityControl();
   delay(500);
 }
